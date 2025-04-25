@@ -217,3 +217,224 @@ void editPatient() {
     while (fscanf(file, "%d,%99[^,],%d,%c,%99[^\n]\n",
                   &patients[patientCount].id,
                   patients[patientCount].name,
+   
+    //last quarter
+    fprintf(file, "%d,%d,%s,%d,%s,%s\n",
+        appointments[appointmentCount].id,
+        appointments[appointmentCount].patientId,
+        patientName,
+        appointments[appointmentCount].doctorId,
+        doctorName,
+        appointments[appointmentCount].date);
+
+fclose(file);
+appointmentCount++;
+printf("Appointment scheduled successfully!\n");
+}
+
+
+void viewAppointments() {
+FILE *file = fopen("appointments.txt", "r");
+if (file == NULL) {
+    printf("No appointment data found.\n");
+    return;
+}
+
+int id, patientId, doctorId;
+char patientName[100], doctorName[100], date[20];
+
+printf("\n--- List of Appointments ---\n");
+
+while (fscanf(file, "%d,%d,%99[^,],%d,%99[^,],%19[^\n]\n",
+              &id, &patientId, patientName, &doctorId, doctorName, date) == 6) {
+    printf("\nAppointment ID: %d\n", id);
+    printf("Patient ID: %d\n", patientId);
+    printf("Patient Name: %s\n", patientName);
+    printf("Doctor ID: %d\n", doctorId);
+    printf("Doctor Name: %s\n", doctorName);
+    printf("Date: %s\n", date);
+              }
+
+fclose(file);
+}
+
+
+void cancelAppointment() {
+int id, found = 0;
+printf("Enter Appointment ID to cancel: ");
+scanf("%d", &id);
+
+FILE *file = fopen("appointments.txt", "r");
+if (file == NULL) {
+    printf("No appointment data found.\n");
+    return;
+}
+
+// Temporary array to store remaining appointments
+Appointment tempAppointments[100];
+int tempCount = 0;
+
+int apptId, patientId, doctorId;
+char patientName[100], doctorName[100], date[20];
+
+while (fscanf(file, "%d,%d,%99[^,],%d,%99[^,],%19[^\n]\n",
+              &apptId, &patientId, patientName, &doctorId, doctorName, date) == 6) {
+    if (apptId == id) {
+        found = 1;
+        continue; // Skip this appointment (delete)
+    }
+    tempAppointments[tempCount].id = apptId;
+    tempAppointments[tempCount].patientId = patientId;
+    strcpy(tempAppointments[tempCount].patientName, patientName);
+    tempAppointments[tempCount].doctorId = doctorId;
+    strcpy(tempAppointments[tempCount].doctorName, doctorName);
+    strcpy(tempAppointments[tempCount].date, date);
+    tempCount++;
+              }
+
+fclose(file);
+
+if (!found) {
+    printf("Appointment not found!\n");
+    return;
+}
+
+// Rewrite the file with remaining appointments
+file = fopen("appointments.txt", "w");
+if (file == NULL) {
+    printf("Error writing to file.\n");
+    return;
+}
+
+for (int i = 0; i < tempCount; i++) {
+    fprintf(file, "%d,%d,%s,%d,%s,%s\n",
+            tempAppointments[i].id,
+            tempAppointments[i].patientId,
+            tempAppointments[i].patientName,
+            tempAppointments[i].doctorId,
+            tempAppointments[i].doctorName,
+            tempAppointments[i].date);
+}
+
+fclose(file);
+printf("Appointment canceled successfully!\n");
+}
+
+
+// Billing System Functions
+void billingSystem() {
+int choice;
+printf("\n--- Billing System ---\n");
+printf("1. Generate Bill\n");
+printf("2. View Bills\n");
+printf("3. Back to Main Menu\n");
+printf("Enter your choice: ");
+scanf("%d", &choice);
+
+switch (choice) {
+    case 1: generateBill(); break;
+    case 2: viewBills(); break;
+    case 3: return;
+    default: printf("Invalid choice!\n"); break;
+}
+}
+
+void generateBill() {
+int patientId, found = -1;
+float consultationFee, treatmentCharges, totalAmount;
+Patient tempPatients[100];
+int tempPatientCount = 0;
+
+// Load patients from file
+FILE *file = fopen("patients.txt", "r");
+if (file == NULL) {
+    printf("Error: Could not open patients.txt\n");
+    return;
+}
+
+while (fscanf(file, "%d,%99[^,],%d,%c,%99[^\n]\n",
+              &tempPatients[tempPatientCount].id,
+              tempPatients[tempPatientCount].name,
+              &tempPatients[tempPatientCount].age,
+              &tempPatients[tempPatientCount].gender,
+              tempPatients[tempPatientCount].disease) == 5) {
+    tempPatientCount++;
+}
+fclose(file);
+
+// Ask for patient ID
+printf("Enter Patient ID for billing: ");
+scanf("%d", &patientId);
+
+// Check if the patient exists
+for (int i = 0; i < tempPatientCount; i++) {
+    if (tempPatients[i].id == patientId) {
+        found = i;
+        break;
+    }
+}
+
+if (found != -1) {
+    printf("Enter Consultation Fee: ");
+    scanf("%f", &consultationFee);
+    printf("Enter Treatment Charges: ");
+    scanf("%f", &treatmentCharges);
+
+    totalAmount = consultationFee + treatmentCharges;
+
+    // Print Bill
+    printf("\n--- Bill Details ---\n");
+    printf("Patient ID: %d\n", tempPatients[found].id);
+    printf("Patient Name: %s\n", tempPatients[found].name);
+    printf("Consultation Fee: %.2f\n", consultationFee);
+    printf("Treatment Charges: %.2f\n", treatmentCharges);
+    printf("Total Amount: %.2f\n", totalAmount);
+
+    // Save to file
+    FILE *billFile = fopen("bills.txt", "a");
+    if (billFile == NULL) {
+        printf("Error saving bill.\n");
+        return;
+    }
+
+    fprintf(billFile, "%d,%s,%.2f,%.2f,%.2f\n",
+            tempPatients[found].id,
+            tempPatients[found].name,
+            consultationFee,
+            treatmentCharges,
+            totalAmount);
+    fclose(billFile);
+
+    printf("Bill saved successfully.\n");
+} else {
+    printf("Error: Patient with ID %d does not exist.\n", patientId);
+}
+}
+
+
+void viewBills() {
+FILE *file = fopen("bills.txt", "r");
+if (file == NULL) {
+    printf("No billing records found.\n");
+    return;
+}
+
+int patientId;
+char name[100];
+float consultationFee, treatmentCharges, totalAmount;
+
+printf("\n--- All Bills ---\n");
+while (fscanf(file, "%d,%99[^,],%f,%f,%f\n",
+              &patientId, name,
+              &consultationFee,
+              &treatmentCharges,
+              &totalAmount) == 5) {
+    printf("\nPatient ID: %d\n", patientId);
+    printf("Patient Name: %s\n", name);
+    printf("Consultation Fee: %.2f\n", consultationFee);
+    printf("Treatment Charges: %.2f\n", treatmentCharges);
+    printf("Total Amount: %.2f\n", totalAmount);
+}
+
+fclose(file);
+}
