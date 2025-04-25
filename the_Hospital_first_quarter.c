@@ -452,4 +452,206 @@ void editDoctor() {
             break;
         }
     }
-        
+
+    if (found != -1) {
+        // Edit doctor data
+        printf("Enter new Name: ");
+        getchar(); // Clear newline left in buffer
+        fgets(doctors[found].name, sizeof(doctors[found].name), stdin);
+        doctors[found].name[strcspn(doctors[found].name, "\n")] = '\0'; // Remove newline
+
+        printf("Enter new Specialty: ");
+        fgets(doctors[found].specialty, sizeof(doctors[found].specialty), stdin);
+        doctors[found].specialty[strcspn(doctors[found].specialty, "\n")] = '\0';
+
+        printf("Enter new Experience (in years): ");
+        scanf("%d", &doctors[found].experience);
+
+        // Save back to file
+        file = fopen("doctors.txt", "w");
+        if (file == NULL) {
+            printf("Error writing to file.\n");
+            return;
+        }
+
+        for (int i = 0; i < count; i++) {
+            fprintf(file, "%d,%s,%s,%d\n",
+                    doctors[i].id,
+                    doctors[i].name,
+                    doctors[i].specialty,
+                    doctors[i].experience);
+        }
+
+        fclose(file);
+        printf("Doctor updated successfully!\n");
+
+    } else {
+        printf("Doctor not found!\n");
+    }
+}
+
+
+void deleteDoctor() {
+    int id, found = -1;
+    Doctor doctors[100];
+    int count = 0;
+
+    FILE *file = fopen("doctors.txt", "r");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    // Load doctors from file
+    while (fscanf(file, "%d,%99[^,],%99[^,],%d\n",
+                  &doctors[count].id,
+                  doctors[count].name,
+                  doctors[count].specialty,
+                  &doctors[count].experience) == 4) {
+        count++;
+                  }
+    fclose(file);
+
+    printf("Enter Doctor ID to delete: ");
+    scanf("%d", &id);
+
+    // Search for doctor to delete
+    for (int i = 0; i < count; i++) {
+        if (doctors[i].id == id) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1) {
+        // Shift the rest to overwrite the deleted doctor
+        for (int i = found; i < count - 1; i++) {
+            doctors[i] = doctors[i + 1];
+        }
+        count--;
+
+        // Write updated list to file
+        file = fopen("doctors.txt", "w");
+        if (file == NULL) {
+            printf("Error writing to file.\n");
+            return;
+        }
+
+        for (int i = 0; i < count; i++) {
+            fprintf(file, "%d,%s,%s,%d\n",
+                    doctors[i].id,
+                    doctors[i].name,
+                    doctors[i].specialty,
+                    doctors[i].experience);
+        }
+
+        fclose(file);
+        printf("Doctor deleted successfully!\n");
+    } else {
+        printf("Doctor not found!\n");
+    }
+}
+
+
+// Appointment Scheduling Functions
+void appointmentScheduling() {
+    int choice;
+    printf("\n--- Appointment Scheduling ---\n");
+    printf("1. Schedule Appointment\n");
+    printf("2. View Appointments\n");
+    printf("3. Cancel Appointment\n");
+    printf("4. Back to Main Menu\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+        case 1: scheduleAppointment(); break;
+        case 2: viewAppointments(); break;
+        case 3: cancelAppointment(); break;
+        case 4: return;
+        default: printf("Invalid choice!\n"); break;
+    }
+}
+
+void scheduleAppointment() {
+    // Load patients from file
+    FILE *pFile = fopen("patients.txt", "r");
+    patientCount = 0;
+    if (pFile != NULL) {
+        while (fscanf(pFile, "%d,%99[^,],%d,%c,%99[^\n]\n",
+                      &patients[patientCount].id,
+                      patients[patientCount].name,
+                      &patients[patientCount].age,
+                      &patients[patientCount].gender,
+                      patients[patientCount].disease) == 5) {
+            patientCount++;
+        }
+        fclose(pFile);
+    }
+
+    // Load doctors from file
+    FILE *dFile = fopen("doctors.txt", "r");
+    doctorCount = 0;
+    if (dFile != NULL) {
+        while (fscanf(dFile, "%d,%99[^,],%99[^,],%d\n",
+                      &doctors[doctorCount].id,
+                      doctors[doctorCount].name,
+                      doctors[doctorCount].specialty,
+                      &doctors[doctorCount].experience) == 4) {
+            doctorCount++;
+        }
+        fclose(dFile);
+    }
+
+    // Input appointment details
+    printf("Enter Appointment ID: ");
+    scanf("%d", &appointments[appointmentCount].id);
+
+    // Validate patient ID
+    int patientId, patientFound = 0;
+    char patientName[100];
+    do {
+        printf("Enter valid Patient ID: ");
+        scanf("%d", &patientId);
+        for (int i = 0; i < patientCount; i++) {
+            if (patients[i].id == patientId) {
+                patientFound = 1;
+                strcpy(patientName, patients[i].name);
+                break;
+            }
+        }
+        if (!patientFound) {
+            printf("Invalid Patient ID. Please try again.\n");
+        }
+    } while (!patientFound);
+    appointments[appointmentCount].patientId = patientId;
+
+    // Validate doctor ID
+    int doctorId, doctorFound = 0;
+    char doctorName[100];
+    do {
+        printf("Enter valid Doctor ID: ");
+        scanf("%d", &doctorId);
+        for (int i = 0; i < doctorCount; i++) {
+            if (doctors[i].id == doctorId) {
+                doctorFound = 1;
+                strcpy(doctorName, doctors[i].name);
+                break;
+            }
+        }
+        if (!doctorFound) {
+            printf("Invalid Doctor ID. Please try again.\n");
+        }
+    } while (!doctorFound);
+    appointments[appointmentCount].doctorId = doctorId;
+
+    // Date input
+    printf("Enter Date (DD/MM/YYYY): ");
+    scanf("%s", appointments[appointmentCount].date);
+
+    // Write to file
+    FILE *file = fopen("appointments.txt", "a");
+    if (file == NULL) {
+        printf("Error opening appointments.txt for writing.\n");
+        return;
+    }
