@@ -216,6 +216,7 @@ void editPatient() {
     // Read patients from the file
     while (fscanf(file, "%d,%99[^,],%d,%c,%99[^\n]\n",
                   &patients[patientCount].id,
+
                   patients[patientCount].name,
                   &patients[patientCount].age,
                   &patients[patientCount].gender,
