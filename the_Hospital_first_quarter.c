@@ -438,3 +438,442 @@ while (fscanf(file, "%d,%99[^,],%f,%f,%f\n",
 
 fclose(file);
 }
+=======
+                  &patients[patientCount].age,
+                  &patients[patientCount].gender,
+                  patients[patientCount].disease) != EOF) {
+        patientCount++;
+    }
+    fclose(file);
+
+    // Find the patient to edit
+    for (int i = 0; i < patientCount; i++) {
+        if (patients[i].id == id) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1) {
+        // Update patient details
+        printf("Enter new Name: ");
+        fgets(patients[found].name, sizeof(patients[found].name), stdin);
+        patients[found].name[strcspn(patients[found].name, "\n")] = '\0';
+
+        printf("Enter new Age: ");
+        scanf("%d", &patients[found].age);
+
+        printf("Enter new Gender (M/F): ");
+        scanf(" %c", &patients[found].gender);
+        getchar(); // Clear newline
+
+        printf("Enter new Disease: ");
+        fgets(patients[found].disease, sizeof(patients[found].disease), stdin);
+        patients[found].disease[strcspn(patients[found].disease, "\n")] = '\0';
+
+        printf("Patient updated successfully!\n");
+
+        // Write updated patients back to the file
+        file = fopen("patients.txt", "w");
+        if (file == NULL) {
+            printf("Error opening file for writing.\n");
+            return;
+        }
+
+        for (int i = 0; i < patientCount; i++) {
+            fprintf(file, "%d,%s,%d,%c,%s\n",
+                    patients[i].id,
+                    patients[i].name,
+                    patients[i].age,
+                    patients[i].gender,
+                    patients[i].disease);
+        }
+        fclose(file);
+    } else {
+        printf("Patient not found!\n");
+    }
+}
+
+
+void deletePatient() {
+    int id, found = 0;
+    printf("Enter Patient ID to delete: ");
+    scanf("%d", &id);
+
+    FILE *file = fopen("patients.txt", "r");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    Patient patients[100]; // Temporary array
+    int patientCount = 0;
+
+    // Read all patients from file
+    while (fscanf(file, "%d,%99[^,],%d,%c,%99[^\n]\n",
+                  &patients[patientCount].id,
+                  patients[patientCount].name,
+                  &patients[patientCount].age,
+                  &patients[patientCount].gender,
+                  patients[patientCount].disease) == 5) {
+        patientCount++;
+                  }
+    fclose(file);
+
+    // Check for patient with matching ID
+    for (int i = 0; i < patientCount; i++) {
+        if (patients[i].id == id) {
+            found = 1;
+            // Shift all elements after the deleted one
+            for (int j = i; j < patientCount - 1; j++) {
+                patients[j] = patients[j + 1];
+            }
+            patientCount--;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Patient with ID %d not found.\n", id);
+        return;
+    }
+
+    // Write updated data back to file
+    file = fopen("patients.txt", "w");
+    if (file == NULL) {
+        printf("Error opening file for writing.\n");
+        return;
+    }
+
+    for (int i = 0; i < patientCount; i++) {
+        fprintf(file, "%d,%s,%d,%c,%s\n",
+                patients[i].id,
+                patients[i].name,
+                patients[i].age,
+                patients[i].gender,
+                patients[i].disease);
+    }
+    fclose(file);
+
+    printf("Patient with ID %d deleted successfully.\n", id);
+}
+
+// Doctor Management Functions
+void doctorManagement() {
+    int choice;
+    printf("\n--- Doctor Management ---\n");
+    printf("1. Add Doctor\n");
+    printf("2. View Doctors\n");
+    printf("3. Edit Doctor\n");
+    printf("4. Delete Doctor\n");
+    printf("5. Back to Main Menu\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+        case 1: addDoctor(); break;
+        case 2: viewDoctors(); break;
+        case 3: editDoctor(); break;
+        case 4: deleteDoctor(); break;
+        case 5: return;
+        default: printf("Invalid choice!\n"); break;
+    }
+}
+
+void addDoctor() {
+    printf("Enter Doctor ID: ");
+    scanf("%d", &doctors[doctorCount].id);
+    getchar(); // Clear the newline left by scanf
+
+    printf("Enter Doctor Name: ");
+    fgets(doctors[doctorCount].name, sizeof(doctors[doctorCount].name), stdin);
+    doctors[doctorCount].name[strcspn(doctors[doctorCount].name, "\n")] = '\0'; // Remove newline
+
+    printf("Enter Specialty: ");
+    fgets(doctors[doctorCount].specialty, sizeof(doctors[doctorCount].specialty), stdin);
+    doctors[doctorCount].specialty[strcspn(doctors[doctorCount].specialty, "\n")] = '\0';
+
+    printf("Enter Experience (in years): ");
+    scanf("%d", &doctors[doctorCount].experience);
+
+    // Save to file
+    FILE *file = fopen("doctors.txt", "a");
+    if (file != NULL) {
+        fprintf(file, "%d,%s,%s,%d\n",
+                doctors[doctorCount].id,
+                doctors[doctorCount].name,
+                doctors[doctorCount].specialty,
+                doctors[doctorCount].experience);
+        fclose(file);
+    }
+
+    doctorCount++;
+    printf("Doctor added successfully!\n");
+}
+
+
+void viewDoctors() {
+    FILE *file = fopen("doctors.txt", "r");
+    if (file == NULL) {
+        printf("No existing doctor data found.\n");
+        return;
+    }
+
+    Doctor doctor;
+    int found = 0;
+
+    while (fscanf(file, "%d,%99[^,],%99[^,],%d\n",
+                  &doctor.id,
+                  doctor.name,
+                  doctor.specialty,
+                  &doctor.experience) == 4) {
+        found = 1;
+        printf("\nID: %d\n", doctor.id);
+        printf("Name: %s\n", doctor.name);
+        printf("Specialty: %s\n", doctor.specialty);
+        printf("Experience: %d years\n", doctor.experience);
+                  }
+
+    fclose(file);
+
+    if (!found) {
+        printf("Doctor file is empty.\n");
+    }
+}
+
+
+void editDoctor() {
+    int id, found = -1;
+    Doctor doctors[100];  // Temporary array for file data
+    int count = 0;
+
+    FILE *file = fopen("doctors.txt", "r");
+    if (file == NULL) {
+        printf("Error opening doctors file.\n");
+        return;
+    }
+
+    // Read doctor data from file
+    while (fscanf(file, "%d,%99[^,],%99[^,],%d\n",
+                  &doctors[count].id,
+                  doctors[count].name,
+                  doctors[count].specialty,
+                  &doctors[count].experience) == 4) {
+        count++;
+    }
+    fclose(file);
+
+    // Ask user for the ID to edit
+    printf("Enter Doctor ID to edit: ");
+    scanf("%d", &id);
+
+    // Search for doctor by ID
+    for (int i = 0; i < count; i++) {
+        if (doctors[i].id == id) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1) {
+        // Edit doctor data
+        printf("Enter new Name: ");
+        getchar(); // Clear newline left in buffer
+        fgets(doctors[found].name, sizeof(doctors[found].name), stdin);
+        doctors[found].name[strcspn(doctors[found].name, "\n")] = '\0'; // Remove newline
+
+        printf("Enter new Specialty: ");
+        fgets(doctors[found].specialty, sizeof(doctors[found].specialty), stdin);
+        doctors[found].specialty[strcspn(doctors[found].specialty, "\n")] = '\0';
+
+        printf("Enter new Experience (in years): ");
+        scanf("%d", &doctors[found].experience);
+
+        // Save back to file
+        file = fopen("doctors.txt", "w");
+        if (file == NULL) {
+            printf("Error writing to file.\n");
+            return;
+        }
+
+        for (int i = 0; i < count; i++) {
+            fprintf(file, "%d,%s,%s,%d\n",
+                    doctors[i].id,
+                    doctors[i].name,
+                    doctors[i].specialty,
+                    doctors[i].experience);
+        }
+
+        fclose(file);
+        printf("Doctor updated successfully!\n");
+
+    } else {
+        printf("Doctor not found!\n");
+    }
+}
+
+
+void deleteDoctor() {
+    int id, found = -1;
+    Doctor doctors[100];
+    int count = 0;
+
+    FILE *file = fopen("doctors.txt", "r");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    // Load doctors from file
+    while (fscanf(file, "%d,%99[^,],%99[^,],%d\n",
+                  &doctors[count].id,
+                  doctors[count].name,
+                  doctors[count].specialty,
+                  &doctors[count].experience) == 4) {
+        count++;
+                  }
+    fclose(file);
+
+    printf("Enter Doctor ID to delete: ");
+    scanf("%d", &id);
+
+    // Search for doctor to delete
+    for (int i = 0; i < count; i++) {
+        if (doctors[i].id == id) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1) {
+        // Shift the rest to overwrite the deleted doctor
+        for (int i = found; i < count - 1; i++) {
+            doctors[i] = doctors[i + 1];
+        }
+        count--;
+
+        // Write updated list to file
+        file = fopen("doctors.txt", "w");
+        if (file == NULL) {
+            printf("Error writing to file.\n");
+            return;
+        }
+
+        for (int i = 0; i < count; i++) {
+            fprintf(file, "%d,%s,%s,%d\n",
+                    doctors[i].id,
+                    doctors[i].name,
+                    doctors[i].specialty,
+                    doctors[i].experience);
+        }
+
+        fclose(file);
+        printf("Doctor deleted successfully!\n");
+    } else {
+        printf("Doctor not found!\n");
+    }
+}
+
+
+// Appointment Scheduling Functions
+void appointmentScheduling() {
+    int choice;
+    printf("\n--- Appointment Scheduling ---\n");
+    printf("1. Schedule Appointment\n");
+    printf("2. View Appointments\n");
+    printf("3. Cancel Appointment\n");
+    printf("4. Back to Main Menu\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+        case 1: scheduleAppointment(); break;
+        case 2: viewAppointments(); break;
+        case 3: cancelAppointment(); break;
+        case 4: return;
+        default: printf("Invalid choice!\n"); break;
+    }
+}
+
+void scheduleAppointment() {
+    // Load patients from file
+    FILE *pFile = fopen("patients.txt", "r");
+    patientCount = 0;
+    if (pFile != NULL) {
+        while (fscanf(pFile, "%d,%99[^,],%d,%c,%99[^\n]\n",
+                      &patients[patientCount].id,
+                      patients[patientCount].name,
+                      &patients[patientCount].age,
+                      &patients[patientCount].gender,
+                      patients[patientCount].disease) == 5) {
+            patientCount++;
+        }
+        fclose(pFile);
+    }
+
+    // Load doctors from file
+    FILE *dFile = fopen("doctors.txt", "r");
+    doctorCount = 0;
+    if (dFile != NULL) {
+        while (fscanf(dFile, "%d,%99[^,],%99[^,],%d\n",
+                      &doctors[doctorCount].id,
+                      doctors[doctorCount].name,
+                      doctors[doctorCount].specialty,
+                      &doctors[doctorCount].experience) == 4) {
+            doctorCount++;
+        }
+        fclose(dFile);
+    }
+
+    // Input appointment details
+    printf("Enter Appointment ID: ");
+    scanf("%d", &appointments[appointmentCount].id);
+
+    // Validate patient ID
+    int patientId, patientFound = 0;
+    char patientName[100];
+    do {
+        printf("Enter valid Patient ID: ");
+        scanf("%d", &patientId);
+        for (int i = 0; i < patientCount; i++) {
+            if (patients[i].id == patientId) {
+                patientFound = 1;
+                strcpy(patientName, patients[i].name);
+                break;
+            }
+        }
+        if (!patientFound) {
+            printf("Invalid Patient ID. Please try again.\n");
+        }
+    } while (!patientFound);
+    appointments[appointmentCount].patientId = patientId;
+
+    // Validate doctor ID
+    int doctorId, doctorFound = 0;
+    char doctorName[100];
+    do {
+        printf("Enter valid Doctor ID: ");
+        scanf("%d", &doctorId);
+        for (int i = 0; i < doctorCount; i++) {
+            if (doctors[i].id == doctorId) {
+                doctorFound = 1;
+                strcpy(doctorName, doctors[i].name);
+                break;
+            }
+        }
+        if (!doctorFound) {
+            printf("Invalid Doctor ID. Please try again.\n");
+        }
+    } while (!doctorFound);
+    appointments[appointmentCount].doctorId = doctorId;
+
+    // Date input
+    printf("Enter Date (DD/MM/YYYY): ");
+    scanf("%s", appointments[appointmentCount].date);
+
+    // Write to file
+    FILE *file = fopen("appointments.txt", "a");
+    if (file == NULL) {
+        printf("Error opening appointments.txt for writing.\n");
+        return;
+    }
